@@ -29,7 +29,7 @@ If you like retro designs and just want to listen to music while studying or gam
 - **Mini Player:** Keep a tiny, resizable square player always on top while gaming or browsing, with album art and ambient glow.
 - **Local MP3 Files:** Play your own music files with automatic album cover support.
 - **Queue System:** Add tracks to queue, reorder them with drag-and-drop, and manage Up Next easily.
-- **Playlists:** Create your own playlists and organize your favorite songs.
+- **Playlists:** Create custom playlists, import public playlists (Spotify & YouTube Music supported for now), and organize your music easily.
 - **Audio Effects:** Apply effects like Slow, Speed, Reverb, Bass Boost, 8D Audio, and Muffle with one click.
 - **Smart Cache:** Fast song loading and zero lag with automatic stream caching.
 - **Global Shortcuts:** Control music while in other apps or games (`Alt + P` to Play/Pause, `Alt + Right` / `Alt + Left` for Next/Prev, `Alt + +` / `Alt + -` to adjust volume smoothly).
