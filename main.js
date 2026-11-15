@@ -5,6 +5,7 @@ const path = require('path');
 const ytSearch = require('yt-search');
 const { exec, spawn } = require('child_process');
 const fs = require('fs');
+const PlaylistImporter = require('./src/js/playlistImporter');
 
 const isWin = process.platform === 'win32';
 const YT_DLP_NAME = isWin ? 'yt-dlp.exe' : 'yt-dlp';
@@ -235,6 +236,89 @@ ipcMain.handle('yt-get-stream', async (event, videoUrl, forceRefresh = false) =>
       }
     });
   });
+});
+
+const importer = new PlaylistImporter(getExecutablePath);
+
+let activeYtStreamChild = null;
+
+ipcMain.handle('import-youtube-stream-start', (event, url) => {
+  if (activeYtStreamChild) {
+    try { activeYtStreamChild.kill(); } catch (e) { }
+    activeYtStreamChild = null;
+  }
+  activeYtStreamChild = importer.streamYouTubeTracks(
+    url,
+    (track) => {
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('import-youtube-track', track);
+      }
+    },
+    (code) => {
+      activeYtStreamChild = null;
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('import-youtube-done', { code });
+      }
+    },
+    (err) => {
+      activeYtStreamChild = null;
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('import-youtube-error', { message: err.message });
+      }
+    }
+  );
+  return { started: true };
+});
+
+ipcMain.handle('import-youtube-cancel', () => {
+  if (activeYtStreamChild) {
+    try { activeYtStreamChild.kill(); } catch (e) { }
+    activeYtStreamChild = null;
+  }
+  return { cancelled: true };
+});
+
+ipcMain.handle('import-detect-platform', async (event, url) => {
+  return importer.detectPlatform(url);
+});
+
+ipcMain.handle('import-spotify-tracks', async (event, url) => {
+  try {
+    const result = await importer.extractSpotifyTracks(url);
+    if (Array.isArray(result)) {
+      return { success: true, tracks: result, title: 'Spotify' };
+    }
+    return { success: true, tracks: result.tracks || [], title: result.title || 'Spotify' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('import-youtube-tracks', async (event, url) => {
+  try {
+    const tracks = await importer.extractYouTubeTracks(url);
+    return { success: true, tracks };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('import-match-spotify', async (event, spotifyTrack) => {
+  try {
+    const matched = await importer.matchSpotifyTrackToYouTube(spotifyTrack, async (q) => {
+      const r = await ytSearch(q);
+      return r.videos.slice(0, 10).map(v => ({
+        title: v.title,
+        timestamp: v.timestamp,
+        videoId: v.videoId,
+        thumbnail: v.thumbnail,
+        url: v.url
+      }));
+    });
+    return { success: !!matched, track: matched };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 });
 
 app.whenReady().then(() => {
