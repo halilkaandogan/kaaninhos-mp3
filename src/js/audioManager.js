@@ -37,6 +37,37 @@ class AudioManager {
 
         this.panInterval = null;
         this.suspendTimeout = null;
+        this.currentSpeedMode = 'normal';
+
+        this.audio.addEventListener('loadedmetadata', () => this._applySpeed());
+        this.audio.addEventListener('canplay', () => this._applySpeed());
+        this.audio.addEventListener('play', () => this._applySpeed());
+        this.audio.addEventListener('playing', () => this._applySpeed());
+        this.audio.addEventListener('ratechange', () => {
+            if (this.currentSpeedMode === 'slow' && this.audio.playbackRate !== 0.90) {
+                this._applySpeed();
+            } else if (this.currentSpeedMode === 'fast' && this.audio.playbackRate !== 1.25) {
+                this._applySpeed();
+            }
+        });
+    }
+
+    _applySpeed() {
+        this.audio.preservesPitch = false;
+        this.audio.mozPreservesPitch = false;
+        this.audio.webkitPreservesPitch = false;
+
+        if (this.currentSpeedMode === 'slow') {
+            this.audio.defaultPlaybackRate = 0.90;
+            this.audio.playbackRate = 0.90;
+        } else if (this.currentSpeedMode === 'fast') {
+            this.audio.defaultPlaybackRate = 1.25;
+            this.audio.playbackRate = 1.25;
+        } else {
+            this.audio.preservesPitch = true;
+            this.audio.defaultPlaybackRate = 1.0;
+            this.audio.playbackRate = 1.0;
+        }
     }
 
     play(url) {
@@ -45,7 +76,10 @@ class AudioManager {
             this.suspendTimeout = null;
         }
         if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
-        if (url) this.audio.src = url;
+        if (url) {
+            this.audio.src = url;
+            this._applySpeed();
+        }
         return this.audio.play();
     }
 
@@ -70,18 +104,8 @@ class AudioManager {
     }
 
     setSpeed(mode) {
-        this.audio.preservesPitch = false;
-        this.audio.mozPreservesPitch = false;
-        this.audio.webkitPreservesPitch = false;
-
-        if (mode === 'slow') {
-            this.audio.playbackRate = 0.90;
-        } else if (mode === 'fast') {
-            this.audio.playbackRate = 1.25;
-        } else {
-            this.audio.preservesPitch = true;
-            this.audio.playbackRate = 1.0;
-        }
+        this.currentSpeedMode = mode;
+        this._applySpeed();
     }
 
     setSlowed(active) {
