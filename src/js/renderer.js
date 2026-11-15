@@ -1,4 +1,4 @@
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, webFrame } = require('electron');
 const path = require('path');
 
 const AudioManager = require(path.join(__dirname, 'src', 'js', 'audioManager.js'));
@@ -120,7 +120,24 @@ const el = {
     pipFxReverb: document.getElementById('pip-fx-reverb'),
     pipFxBass: document.getElementById('pip-fx-bass'),
     pipFx8d: document.getElementById('pip-fx-8d'),
-    pipFxMuffle: document.getElementById('pip-fx-muffle')
+    pipFxMuffle: document.getElementById('pip-fx-muffle'),
+
+    importModal: document.getElementById('import-playlist-modal'),
+    importUrlInput: document.getElementById('import-url-input'),
+    importStartBtn: document.getElementById('import-start-btn'),
+    importCloseBtn: document.getElementById('import-close-btn'),
+    importStep1: document.getElementById('import-step-1'),
+    importStep2: document.getElementById('import-step-2'),
+    importProgressLabel: document.getElementById('import-progress-label'),
+    importProgressFill: document.getElementById('import-progress-fill'),
+    importStats: document.getElementById('import-stats'),
+    importLog: document.getElementById('import-log'),
+    importCancelBtn: document.getElementById('import-cancel-btn'),
+    importDoneBtn: document.getElementById('import-done-btn'),
+    importErrorMsg: document.getElementById('import-error-msg'),
+    scaleDownBtn: document.getElementById('scale-down-btn'),
+    scaleUpBtn: document.getElementById('scale-up-btn'),
+    scaleLabel: document.getElementById('scale-label')
 };
 
 
@@ -225,7 +242,7 @@ function renderPlaylistsGrid() {
 
     const addCard = document.createElement('div');
     addCard.className = 'playlist-card';
-    addCard.innerHTML = `<div class="playlist-card-icon" style="pointer-events: none;">+</div><div class="playlist-card-title" style="pointer-events: none;">NEW PLAYLIST</div>`;
+    addCard.innerHTML = '<div class="playlist-card-icon" style="pointer-events: none;">+</div><div class="playlist-card-title" style="pointer-events: none;">NEW PLAYLIST</div>';
     addCard.ondragover = (e) => { e.preventDefault(); addCard.classList.add('drag-over'); };
     addCard.ondragleave = () => addCard.classList.remove('drag-over');
     addCard.ondrop = (e) => {
@@ -248,6 +265,15 @@ function renderPlaylistsGrid() {
         }, 12);
     };
     el.playlistsGrid.appendChild(addCard);
+
+    const importCard = document.createElement('div');
+    importCard.className = 'playlist-card';
+    importCard.innerHTML = '<div class="playlist-card-icon" style="pointer-events: none;"><span class="import-music-badge"><span class="import-music-badge-plus">+</span><span>🎵</span></span></div><div class="playlist-card-title" style="pointer-events: none;">IMPORT</div>';
+    importCard.onclick = () => {
+        if (isPlaylistDragging) return;
+        openImportModal();
+    };
+    el.playlistsGrid.appendChild(importCard);
 
     playlistMgr.getAllPlaylists().forEach((p, index) => {
         const card = document.createElement('div');
@@ -504,8 +530,8 @@ async function playTrack(track, forcePlaylistId = null, isFromQueue = false) {
     el.title.innerText = "LOADING...";
     el.title.classList.remove('scrolling');
     
-    el.slow.classList.remove('active');
-    el.speed.classList.remove('active');
+    if (el.slow && el.slow.classList.contains('active')) player.setSpeed('slow');
+    else if (el.speed && el.speed.classList.contains('active')) player.setSpeed('fast');
     
     if (track.type === 'youtube') {
         let result = await ipcRenderer.invoke('yt-get-stream', track.url);
@@ -1066,7 +1092,7 @@ function exitPipMode() {
     if (el.pipPlayerContainer) el.pipPlayerContainer.style.display = 'none';
     if (el.playerContainer) el.playerContainer.style.display = 'flex';
     ipcRenderer.send('set-always-on-top', false);
-    ipcRenderer.send('resize-window', 340, 575, true);
+    ipcRenderer.send('resize-window', 340, 575, true); 
 }
 
 if (el.pipToggleBtn) el.pipToggleBtn.onclick = enterPipMode;
@@ -1290,6 +1316,31 @@ window.addEventListener('keydown', (e) => {
             e.preventDefault();
             changeVolume(-2);
         }
+    } else if (isPlaylistOpen && !e.ctrlKey && !e.metaKey) {
+        if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+            return;
+        }
+        if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+            e.preventDefault();
+            const delta = e.key === 'PageUp' ? -200 : -60;
+            if (el.playlistDetailView && el.playlistDetailView.style.display !== 'none') {
+                el.favList.scrollBy({ top: delta, behavior: 'smooth' });
+            } else if (el.queueContainer && el.queueContainer.style.display === 'flex') {
+                el.queueList.scrollBy({ top: delta, behavior: 'smooth' });
+            } else if (el.playlistsGridView) {
+                el.playlistsGridView.scrollBy({ top: delta, behavior: 'smooth' });
+            }
+        } else if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+            e.preventDefault();
+            const delta = e.key === 'PageDown' ? 200 : 60;
+            if (el.playlistDetailView && el.playlistDetailView.style.display !== 'none') {
+                el.favList.scrollBy({ top: delta, behavior: 'smooth' });
+            } else if (el.queueContainer && el.queueContainer.style.display === 'flex') {
+                el.queueList.scrollBy({ top: delta, behavior: 'smooth' });
+            } else if (el.playlistsGridView) {
+                el.playlistsGridView.scrollBy({ top: delta, behavior: 'smooth' });
+            }
+        }
     }
 });
 
@@ -1299,4 +1350,216 @@ if (el.pipCoverImg && el.pipAmbientGlow) {
             el.pipAmbientGlow.src = el.pipCoverImg.src;
         }
     }).observe(el.pipCoverImg, { attributes: true, attributeFilter: ['src'] });
+}
+
+
+let importCancelled = false;
+
+function openImportModal() {
+    el.importModal.classList.remove('hidden');
+    el.importStep1.style.display = 'flex';
+    el.importStep2.style.display = 'none';
+    if (el.importErrorMsg) {
+        el.importErrorMsg.style.display = 'none';
+        el.importErrorMsg.innerText = '';
+    }
+    el.importUrlInput.value = '';
+    el.importUrlInput.focus();
+}
+
+function closeImportModal() {
+    el.importModal.classList.add('hidden');
+    importCancelled = true;
+    ipcRenderer.invoke('import-youtube-cancel');
+}
+
+el.importCloseBtn.onclick = closeImportModal;
+
+el.importUrlInput.oninput = () => {
+    if (el.importErrorMsg) el.importErrorMsg.style.display = 'none';
+};
+
+el.importUrlInput.onkeydown = (e) => {
+    if (e.key === 'Enter') el.importStartBtn.click();
+    if (e.key === 'Escape') closeImportModal();
+};
+
+el.importDoneBtn.onclick = () => {
+    closeImportModal();
+    renderPlaylistsGrid();
+};
+
+el.importCancelBtn.onclick = () => {
+    importCancelled = true;
+    ipcRenderer.invoke('import-youtube-cancel');
+    el.importCancelBtn.style.display = 'none';
+};
+
+function importLogAdd(text, status) {
+    const item = document.createElement('div');
+    item.className = 'import-log-item';
+    const label = status === 'ok' ? '✓' : (status === 'fail' ? '✗' : '⊘');
+    const cls = status === 'ok' ? 'import-log-ok' : (status === 'fail' ? 'import-log-fail' : 'import-log-skip');
+    item.innerHTML = '<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + text + '</span><span class="' + cls + '">' + label + '</span>';
+    el.importLog.appendChild(item);
+    el.importLog.scrollTop = el.importLog.scrollHeight;
+}
+
+el.importStartBtn.onclick = async () => {
+    const url = el.importUrlInput.value.trim();
+    if (!url) {
+        if (el.importErrorMsg) {
+            el.importErrorMsg.innerText = 'Please enter a playlist URL.';
+            el.importErrorMsg.style.display = 'block';
+        }
+        return;
+    }
+
+    const platform = await ipcRenderer.invoke('import-detect-platform', url);
+    if (!platform) {
+        if (el.importErrorMsg) {
+            el.importErrorMsg.innerText = 'Invalid link. Paste a Spotify or YouTube Music playlist URL.';
+            el.importErrorMsg.style.display = 'block';
+        }
+        return;
+    }
+
+    importCancelled = false;
+    el.importStep1.style.display = 'none';
+    el.importStep2.style.display = 'flex';
+    el.importLog.innerHTML = '';
+    el.importProgressFill.style.width = '0%';
+    el.importStats.innerText = '';
+    el.importDoneBtn.style.display = 'none';
+    el.importCancelBtn.style.display = 'block';
+
+    if (platform === 'youtube') {
+        await importYouTubePlaylist(url);
+    } else {
+        await importSpotifyPlaylist(url);
+    }
+};
+
+async function importYouTubePlaylist(url) {
+    el.importProgressLabel.innerText = 'Fetching YouTube playlist...';
+    el.importProgressFill.style.width = '10%';
+    el.importStats.innerText = '';
+
+    const result = await ipcRenderer.invoke('import-youtube-tracks', url);
+    const tracks = (result && result.tracks && Array.isArray(result.tracks)) ? result.tracks : [];
+
+    if (!result.success || tracks.length === 0) {
+        el.importProgressLabel.innerText = 'Failed to load playlist.';
+        el.importStats.innerText = result.error || 'No tracks found.';
+        el.importCancelBtn.style.display = 'none';
+        el.importDoneBtn.style.display = 'block';
+        return;
+    }
+
+    const rawName = result.title || 'YT Music';
+    const playlistName = rawName.trim().substring(0, 12);
+    const newId = playlistMgr.createPlaylist(playlistName);
+    playlistMgr.setActive(newId);
+
+    let added = 0;
+    let failed = 0;
+
+    for (let i = 0; i < tracks.length; i++) {
+        if (importCancelled) break;
+
+        const track = tracks[i];
+        const pct = Math.round(((i + 1) / tracks.length) * 100);
+        el.importProgressFill.style.width = pct + '%';
+        el.importProgressLabel.innerText = 'Imported tracks: ' + (i + 1) + '/' + tracks.length;
+
+        const wasAdded = playlistMgr.add({
+            title: track.title,
+            url: track.url,
+            thumbnail: track.thumbnail || 'assets/icon.png',
+            type: 'youtube'
+        });
+
+        if (wasAdded) {
+            added++;
+            importLogAdd(track.title, 'ok');
+        } else {
+            failed++;
+            importLogAdd(track.title, 'skip');
+        }
+
+        el.importStats.innerText = added + ' added \u00B7 ' + failed + ' failed \u00B7 ' + (tracks.length - i - 1) + ' remaining';
+        await new Promise(r => setTimeout(r, 45));
+    }
+
+    el.importProgressLabel.innerText = importCancelled ? 'Import cancelled.' : 'Import completed!';
+    el.importProgressFill.style.width = '100%';
+    el.importStats.innerText = added + ' added \u00B7 ' + failed + ' failed';
+    el.importCancelBtn.style.display = 'none';
+    el.importDoneBtn.style.display = 'block';
+    renderPlaylistsGrid();
+}
+
+async function importSpotifyPlaylist(url) {
+    el.importProgressLabel.innerText = 'Fetching Spotify playlist...';
+    el.importProgressFill.style.width = '5%';
+    el.importStats.innerText = '';
+
+    const result = await ipcRenderer.invoke('import-spotify-tracks', url);
+    const spotifyTracks = (result && result.tracks && Array.isArray(result.tracks)) ? result.tracks : (Array.isArray(result) ? result : []);
+
+    if (!result.success || spotifyTracks.length === 0) {
+        el.importProgressLabel.innerText = 'Failed to load playlist.';
+        el.importStats.innerText = result.error || 'No tracks found. Make sure the playlist is public.';
+        el.importCancelBtn.style.display = 'none';
+        el.importDoneBtn.style.display = 'block';
+        return;
+    }
+
+    const rawName = result.title || 'Spotify';
+    const playlistName = rawName.trim().substring(0, 12);
+    const newId = playlistMgr.createPlaylist(playlistName);
+    playlistMgr.setActive(newId);
+
+    let matched = 0;
+    let failed = 0;
+
+    for (let i = 0; i < spotifyTracks.length; i++) {
+        if (importCancelled) break;
+
+        const st = spotifyTracks[i];
+        const displayName = st.title + (st.artist ? ' - ' + st.artist : '');
+        const pct = Math.round(10 + ((i + 1) / spotifyTracks.length) * 90);
+        el.importProgressFill.style.width = pct + '%';
+        el.importProgressLabel.innerText = 'Matched tracks: ' + (i + 1) + '/' + spotifyTracks.length;
+
+        const matchResult = await ipcRenderer.invoke('import-match-spotify', st);
+
+        if (matchResult.success && matchResult.track) {
+            const wasAdded = playlistMgr.add({
+                title: matchResult.track.title,
+                url: matchResult.track.url,
+                thumbnail: matchResult.track.thumbnail || 'assets/icon.png',
+                type: 'youtube'
+            });
+            if (wasAdded) {
+                matched++;
+                importLogAdd(displayName, 'ok');
+            } else {
+                failed++;
+                importLogAdd(displayName, 'skip');
+            }
+        } else {
+            failed++;
+            importLogAdd(displayName, 'fail');
+        }
+
+        el.importStats.innerText = matched + ' added \u00B7 ' + failed + ' failed \u00B7 ' + (spotifyTracks.length - i - 1) + ' remaining';
+    }
+
+    el.importProgressLabel.innerText = importCancelled ? 'Import cancelled.' : 'Import completed!';
+    el.importProgressFill.style.width = '100%';
+    el.importStats.innerText = matched + ' added \u00B7 ' + failed + ' failed';
+    el.importCancelBtn.style.display = 'none';
+    el.importDoneBtn.style.display = 'block';
+    renderPlaylistsGrid();
 }
