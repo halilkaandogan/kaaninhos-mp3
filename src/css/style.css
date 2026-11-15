@@ -312,6 +312,8 @@ body {
 
 .playlist-card-title {
     font-size: 8px;
+    line-height: 1.4;
+    padding: 2px 0;
     margin-top: 5px;
     white-space: nowrap;
     overflow: hidden;
@@ -745,7 +747,6 @@ body.pip-mode .pip-player-container {
     user-select: none;
     box-sizing: border-box;
     container-type: inline-size;
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
     transform: translateZ(0);
     isolation: isolate;
 }
@@ -1286,3 +1287,274 @@ body.pip-mode .pip-player-container {
     transform: scale(1.15);
 }
 
+
+.import-modal-content {
+    width: 85%;
+    max-width: 320px;
+    padding: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 2px solid var(--border-color);
+    background: var(--bg-color);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.import-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--border-color);
+}
+
+.import-modal-title {
+    font-size: 8px;
+    color: white;
+    flex-grow: 1;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+.import-close-x {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.import-close-x:hover {
+    color: white;
+}
+
+.import-step {
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.import-platform-icons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.import-platform-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 7px;
+    color: var(--text-color);
+    background: var(--light-bg);
+    border: 1px solid var(--border-color);
+    letter-spacing: 0.5px;
+}
+
+.import-platform-icon {
+    font-size: 10px;
+}
+
+.import-url-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 8px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    outline: none;
+    background: var(--light-bg);
+    color: var(--text-color);
+    box-sizing: border-box;
+}
+
+.import-url-input:focus {
+    border-color: var(--accent-color);
+}
+
+.import-action-btn {
+    width: 100%;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 9px;
+    cursor: pointer;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    letter-spacing: 1px;
+    transition: opacity 0.15s;
+}
+
+.import-action-btn:hover {
+    opacity: 0.85;
+}
+
+.import-cancel-btn {
+    background: var(--heart-color);
+}
+
+.import-status-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.import-progress-label {
+    font-size: 8px;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.import-progress-bar-wrap {
+    width: 100%;
+    height: 10px;
+    background: var(--light-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.import-progress-bar-fill {
+    height: 100%;
+    background: var(--accent-color);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.import-stats {
+    font-size: 7px;
+    line-height: 1.4;
+    color: var(--text-color);
+    text-align: center;
+    padding-top: 4px;
+}
+
+.import-log {
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 7px;
+    color: var(--text-color);
+    background: var(--light-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.import-log-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.import-log-item:last-child {
+    border-bottom: none;
+}
+
+.import-log-ok {
+    color: #28c840;
+    font-weight: bold;
+}
+
+.import-log-fail {
+    color: var(--heart-color);
+    font-weight: bold;
+}
+
+.import-log-skip {
+    color: #f39c12;
+    font-weight: bold;
+}
+
+.playlist-action-group {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+}
+
+.action-subcard {
+    flex: 1;
+    background: var(--light-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+    text-align: center;
+    box-sizing: border-box;
+    padding: 0 6px;
+}
+
+.action-subcard:hover {
+    transform: scale(1.03);
+    background: rgba(108, 92, 231, 0.2);
+}
+
+.action-subcard-title {
+    font-size: 7px;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.5px;
+}
+
+.action-subcard-icon {
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.import-music-badge {
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+}
+
+.import-music-badge-plus {
+    position: absolute;
+    top: -6px;
+    left: -8px;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--accent-color);
+    line-height: 1;
+}
+
+.import-error-msg {
+    font-size: 7px;
+    color: #ff4757;
+    background: rgba(255, 71, 87, 0.1);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    border-radius: 6px;
+    padding: 6px 8px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+#custom-alert-modal {
+    z-index: 2500 !important;
+}
+
+#custom-alert-modal .custom-modal-content {
+    max-width: 250px;
+    width: 80%;
+    text-align: center;
+    box-sizing: border-box;
+}

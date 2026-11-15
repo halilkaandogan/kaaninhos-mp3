@@ -90,7 +90,6 @@
                     <button class="fx-btn" id="muffle-btn">MUFFLE</button>
                 </div>
             </div>
-
             <input type="file" id="file-input" accept="audio/*" style="display: none;">
         </div>
 
@@ -157,7 +156,7 @@
                         <span id="pip-current-time">0:00</span>
                         <span id="pip-duration">0:00</span>
                     </div>
-                    <input type="range" id="pip-progress-bar" value="0" min="0" max="100" step="0.1">
+                    <input type="range" id="pip-progress-bar" value="0" min="0" max="100" step="0.05">
                 </div>
             </div>
 
@@ -252,6 +251,44 @@
             <p id="alert-message" style="font-size: 12px;"></p>
             <div style="display: flex; justify-content: center; margin-top: 15px;">
                 <button id="alert-ok" style="padding: 8px 25px; cursor: pointer; background: #6c5ce7; color: white; border: none; border-radius: 4px; font-weight: bold;"><span>OK</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="import-playlist-modal" class="custom-modal hidden">
+        <div class="custom-modal-content import-modal-content">
+            <div class="import-modal-header">
+                <span class="import-modal-title">IMPORT PLAYLIST</span>
+                <button id="import-close-btn" class="import-close-x">&times;</button>
+            </div>
+
+            <div id="import-step-1" class="import-step">
+                <div class="import-platform-icons">
+                    <div class="import-platform-badge spotify-badge">
+                        <span class="import-platform-icon">🟢</span>
+                        <span>SPOTIFY</span>
+                    </div>
+                    <div class="import-platform-badge yt-badge">
+                        <span class="import-platform-icon">🔴</span>
+                        <span>YT MUSIC</span>
+                    </div>
+                </div>
+                <input type="text" id="import-url-input" class="import-url-input" placeholder="Paste playlist link..." spellcheck="false" />
+                <div id="import-error-msg" class="import-error-msg" style="display: none;"></div>
+                <button id="import-start-btn" class="import-action-btn">IMPORT</button>
+            </div>
+
+            <div id="import-step-2" class="import-step" style="display: none;">
+                <div class="import-status-area">
+                    <div class="import-progress-label" id="import-progress-label">Fetching playlist...</div>
+                    <div class="import-progress-bar-wrap">
+                        <div class="import-progress-bar-fill" id="import-progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="import-stats" id="import-stats"></div>
+                    <div class="import-log" id="import-log"></div>
+                </div>
+                <button id="import-cancel-btn" class="import-action-btn import-cancel-btn" style="display: none;">CANCEL</button>
+                <button id="import-done-btn" class="import-action-btn" style="display: none;">DONE</button>
             </div>
         </div>
     </div>
